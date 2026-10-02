@@ -1,0 +1,574 @@
+---
+title: "Tarea 2. Distribución"
+author: "Xochilt Duran"
+format: html
+editor: visual
+---
+```{r setup, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+library(knitr)
+library(kableExtra)
+library(moments)
+```
+
+## Ejercicios Propuestos
+
+\::: {#exr-altura} 1
+
+### Análisis de Altura de Estudiantes
+
+Las alturas de estudiantes universitarios siguen una distribución normal con media $\mu = 170 cm$ y desviación estándar $\sigma = 8 cm$.
+
+1.  Simula una muestra de 500 estudiantes
+```{r}
+#| code-fold: true
+
+# Parámetros del proceso
+mu_altura <- 170  # cm
+sigma_altura <- 8.00  # cm
+
+# Simulación de la muestra 500 estudiantes
+n_estudiantes <- 500
+set.seed(50)
+muestreo <- rnorm(n_estudiantes, mean = mu_altura, sd = sigma_altura)
+
+cat("Distribución: N(μ =", mu_altura, ", σ =", sigma_altura, ")\n")
+```
+
+
+2.  Calcula la media, mediana y desviación estándar muestral
+```{r}
+#| code-fold: true
+
+# 2. Estadísticos muestrales
+media_muestral <- mean(muestreo)
+mediana_muestral <- median(muestreo)
+sd_muestral <- sd(muestreo)  # en R, sd() ya usa n-1 por defecto (muestral)
+
+cat("Media muestral:", round(media_muestral, 2), "cm\n")
+cat("Mediana muestral:", round(mediana_muestral, 2), "cm\n")
+cat("Desviación estándar muestral:", round(sd_muestral, 2), "cm\n")
+
+```
+
+3.  ¿Qué porcentaje de estudiantes mide más de 180 cm?
+```{r}
+#| code-fold: true
+
+# 3. Porcentaje que mide más de 180 cm
+
+# Opción A: empírico (con la muestra simulada)
+pct_muestreo <- mean(muestreo > 180) * 100
+
+# Opción B: teórico (con la distribución normal)
+pct_teorico <- (1 - pnorm(180, mean = mu_altura, sd = sigma_altura)) * 100
+
+cat("\n% mayor a 180 cm (muestreo):", round(pct_muestreo, 2), "%\n")
+cat("% mayor a 180 cm (teórico):", round(pct_teorico, 2), "%\n")
+```
+
+
+4.  ¿Cuál es la altura del estudiante en el percentil 25?
+```{r}
+#| code-fold: true
+
+# 4. Percentil 25
+p25_muestreo <- quantile(muestreo, 0.25)
+p25_teorico <- qnorm(0.25, mean = mu_altura, sd = sigma_altura)
+
+cat("\nPercentil 25 (muestreo):", round(p25_muestreo, 2), "cm\n")
+cat("Percentil 25 (teórico):", round(p25_teorico, 2), "cm\n")
+
+```
+
+
+5.  Crea un histograma de la muestra con la densidad teórica superpuesta
+```{r}
+#| code-fold: true
+
+hist(muestreo, breaks = 30, probability = TRUE, 
+     main = "Distribución de alturas simuladas",
+     xlab = "Altura (cm)", col = "lightblue")
+
+curve(dnorm(x, mean = mu_altura, sd = sigma_altura), add = TRUE, col = "red", lwd = 2)
+```
+Porcentaje de error.
+```{r}
+
+#| code-fold: true
+
+# (usando las variables que ya calculamos antes)
+
+# Error en la media
+error_media <- abs((mu_altura - media_muestral) / mu_altura) * 100
+
+# Error en la desviación estándar
+error_sd <- abs((sigma_altura - sd_muestral) / sigma_altura) * 100
+
+# Error en el porcentaje >180cm
+error_pct180 <- abs((pct_teorico - pct_muestreo) / pct_teorico) * 100
+
+# Error en el percentil 25
+error_p25 <- abs((p25_teorico - p25_muestreo) / p25_teorico) * 100
+
+cat("Error % en la media:", round(error_media, 2), "%\n")
+cat("Error % en la SD:", round(error_sd, 2), "%\n")
+cat("Error % en %>180cm:", round(error_pct180, 2), "%\n")
+cat("Error % en percentil 25:", round(error_p25, 2), "%\n")
+```
+
+
+
+\:::
+
+------------------------------------------------------------------------
+
+\::: {#exr-temperatura} 2
+
+### Control de Temperatura Industrial
+
+Un proceso industrial debe mantener la temperatura a 350°C ± 10°C. Las temperaturas siguen $N(350, 5^2)$.
+
+1.  Simular un día de producción (1000 mediciones)
+```{r}
+#| code-fold: true
+
+# Parámetros del proceso
+mu <- 350
+sigma <- 5
+n <- 1000
+
+# Límites de especificación
+LIE <- 340  # límite inferior de especificación
+LSE <- 360  # límite superior de especificación
+
+# ============================================
+# 1. Simular un día de producción (1000 mediciones)
+# ============================================
+set.seed(42)
+mediciones <- rnorm(n, mean = mu, sd = sigma)
+
+cat("Media muestral:", round(mean(mediciones), 2), "°C\n")
+cat("SD muestral:", round(sd(mediciones), 2), "°C\n")
+
+```
+
+
+2.  ¿Qué porcentaje del tiempo la temperatura está fuera de especificación?
+```{r}
+#| code-fold: true
+
+# 2. % del tiempo fuera de especificación
+# ============================================
+
+# Empírico (con los datos simulados)
+fuera_muestra <- mean(mediciones < LIE | mediciones > LSE) * 100
+
+# Teórico (con la distribución normal)
+dentro_teorico <- pnorm(LSE, mu, sigma) - pnorm(LIE, mu, sigma)
+fuera_teorico <- (1 - dentro_teorico) * 100
+
+cat("\n% fuera de especificación (muestra):", round(fuera_muestra, 2), "%\n")
+cat("% fuera de especificación (teórico):", round(fuera_teorico, 2), "%\n")
+```
+
+
+3.  Si el proceso se descentra a $\mu = 355°C$, ¿cómo cambia la calidad?
+```{r}
+#| code-fold: true
+
+# 3. Proceso descentrado a mu = 355
+# ============================================
+mu_descentrado <- 355
+
+dentro_descentrado <- pnorm(LSE, mu_descentrado, sigma) - pnorm(LIE, mu_descentrado, sigma)
+fuera_descentrado <- (1 - dentro_descentrado) * 100
+
+cat("\n--- Proceso descentrado (mu=355) ---\n")
+cat("% fuera de especificación:", round(fuera_descentrado, 2), "%\n")
+cat("Comparación: de", round(fuera_teorico,2), "% a", round(fuera_descentrado,2), "%\n")
+
+# Simulación del proceso descentrado (opcional, para verlo con datos)
+set.seed(42)
+mediciones_descentrado <- rnorm(n, mean = mu_descentrado, sd = sigma)
+fuera_descentrado_muestra <- mean(mediciones_descentrado < LIE | mediciones_descentrado > LSE) * 100
+cat("% fuera (muestra simulada):", round(fuera_descentrado_muestra, 2), "%\n")
+
+```
+
+4.  ¿Qué $\sigma$ se necesita para tener 99.9% de productos dentro de especificación?
+```{r}
+#| code-fold: true
+
+# 4. Sigma necesaria para 99.9% dentro de especificación
+# ============================================
+
+# Z crítico para 99.9% dentro (0.05% en cada cola)
+z_critico <- qnorm(0.9995)  # equivalente a 1 - 0.0005
+
+# El límite superior (360) está a 10°C de la media (350)
+distancia <- LSE - mu
+
+sigma_necesaria <- distancia / z_critico
+
+cat("\nZ crítico necesario:", round(z_critico, 3), "\n")
+cat("Sigma necesaria para 99.9% dentro de especificación:", round(sigma_necesaria, 3), "°C\n")
+
+# Verificación: con esa sigma, ¿qué % queda dentro?
+verificacion <- pnorm(LSE, mu, sigma_necesaria) - pnorm(LIE, mu, sigma_necesaria)
+cat("Verificación (% dentro con esa sigma):", round(verificacion * 100, 4), "%\n")
+
+```
+
+```{r}
+#| code-fold: true
+
+# Gráfico comparativo: proceso original vs descentrado
+# ============================================
+curve(dnorm(x, mu, sigma), from = 320, to = 380, col = "blue", lwd = 2,
+      main = "Proceso centrado vs descentrado",
+      xlab = "Temperatura (°C)", ylab = "Densidad")
+curve(dnorm(x, mu_descentrado, sigma), add = TRUE, col = "red", lwd = 2)
+abline(v = c(LIE, LSE), col = "darkgreen", lty = 2, lwd = 2)
+legend("topright", legend = c("Centrado (μ=350)", "Descentrado (μ=355)", "Límites spec"),
+       col = c("blue", "red", "darkgreen"), lty = c(1,1,2), lwd = 2)
+```
+
+
+\:::
+
+------------------------------------------------------------------------
+
+\::: {#exr-ventas} 3
+
+### Análisis de Ventas Mensuales
+
+Las ventas mensuales de una tienda siguen $N(50000, 12000^2)$ pesos.
+
+**Tareas**:
+
+1.  Simula las ventas de 24 meses
+```{r}
+#| code-fold: true
+
+# Parámetros
+mu <- 50000
+sigma <- 12000
+n <- 24
+
+# 1. Simular 24 meses
+set.seed(42)
+ventas <- rnorm(n, mean = mu, sd = sigma)
+print(round(ventas, 0))
+
+cat("Media muestral:", round(mean(ventas), 2), "\n")
+cat("SD muestral:", round(sd(ventas), 2), "\n")
+
+```
+
+2.  ¿Cuál es la probabilidad de tener ventas superiores a 60,000 pesos?
+```{r}
+#| code-fold: true
+
+# 2. P(ventas > 60000)
+prob_mayor_60k <- 1 - pnorm(60000, mu, sigma)
+cat("\nP(ventas > 60,000):", round(prob_mayor_60k * 100, 2), "%\n")
+
+# (empírico, con la muestra)
+prob_muestra_60k <- mean(ventas > 60000) * 100
+cat("Empírico en la muestra:", round(prob_muestra_60k, 2), "%\n")
+```
+
+3.  ¿En cuántos meses se espera tener ventas por debajo de 30,000 pesos?
+```{r}
+#| code-fold: true
+
+# 3. Meses esperados con ventas < 30000
+prob_menor_30k <- pnorm(30000, mu, sigma)
+meses_esperados <- prob_menor_30k * n
+cat("\nProbabilidad ventas < 30,000:", round(prob_menor_30k * 100, 2), "%\n")
+cat("Meses esperados (de 24):", round(meses_esperados, 2), "\n")
+```
+```{r}
+#| code-fold: true
+
+# (empírico, con la muestra)
+meses_muestra <- sum(ventas < 30000)
+cat("Meses reales en la muestra simulada:", meses_muestra, "\n")
+
+```
+
+
+4.  Calcula el rango intercuartílico de las ventas
+```{r}
+#| code-fold: true
+
+# 4. Rango intercuartílico (IQR)
+Q1_teorico <- qnorm(0.25, mu, sigma)
+Q3_teorico <- qnorm(0.75, mu, sigma)
+IQR_teorico <- Q3_teorico - Q1_teorico
+
+cat("\nQ1 teórico:", round(Q1_teorico, 2), "\n")
+cat("Q3 teórico:", round(Q3_teorico, 2), "\n")
+cat("IQR teórico:", round(IQR_teorico, 2), "\n")
+
+```
+```{r}
+#| code-fold: true
+
+# (empírico, con la muestra) - R tiene función directa
+IQR_muestra <- IQR(ventas)
+cat("IQR de la muestra simulada:", round(IQR_muestra, 2), "\n")
+```
+
+
+5.  Si la meta es superar 45,000 pesos, ¿qué porcentaje de meses se cumple?
+```{r}
+#| code-fold: true
+
+# 5. % de meses que supera la meta de 45,000
+prob_supera_meta <- 1 - pnorm(45000, mu, sigma)
+cat("\nP(ventas > 45,000):", round(prob_supera_meta * 100, 2), "%\n")
+
+# (empírico, con la muestra)
+pct_muestra_meta <- mean(ventas > 45000) * 100
+cat("Empírico en la muestra:", round(pct_muestra_meta, 2), "%\n")
+```
+
+
+\:::
+
+\::: {#exr-baterias} 4
+
+### Tiempo de Vida de Baterías
+
+La duración de baterías sigue $N(1200, 150^2)$ horas.
+
+1.  Simula la vida útil de 800 baterías
+```{r}
+#| code-fold: true
+
+# Parámetros
+mu <- 1200
+sigma <- 150
+n <- 800
+
+# 1. Simular la vida util de 800 baterías
+set.seed(50)
+baterias <- rnorm(n, mean = mu, sd = sigma)
+print(round(baterias, 0))
+
+cat("Media muestral:", round(mean(baterias), 2), "\n")
+cat("SD muestral:", round(sd(baterias), 2), "\n")
+```
+
+
+2.  ¿Qué garantía (en horas) cubre al 95% de las baterías?
+
+```{r}
+#| code-fold: true 
+
+garantia_95 <- qnorm(0.05, mean = 1200, sd = 150)
+garantia_95
+```
+
+3.  Si se venden 10,000 baterías con garantía de 900 horas, ¿cuántas se espera que fallen?
+```{r}
+#| code-fold: true
+
+prob_falla <- pnorm(900, mean = 1200, sd = 150)
+baterias_falladas <- prob_falla * 10000
+baterias_falladas
+```
+
+
+4.  Compara la media y mediana de tu simulación con los valores teóricos
+```{r}
+#| code-fold: true
+
+# De la simulacion de 800 baterias
+media_simulada <- mean(baterias)
+mediana_simulada <- median(baterias)
+
+# Valores teóricos, definidos por la distribución
+media_teorica <- 1200
+mediana_teorica <- 1200   # en una normal, media = mediana siempre, IMPORTANTE
+
+# Comparación
+cat("Media simulada:", media_simulada, "\n")
+cat("Media teórica:", media_teorica, "\n")
+cat("Mediana simulada:", mediana_simulada, "\n")
+cat("Mediana teórica:", mediana_teorica, "\n")
+```
+
+5.  ¿Cuál es el percentil 10 de la distribución?
+```{r}
+#| code-fold: true
+
+percentil_10 <- qnorm(0.10, mean = 1200, sd = 150)
+percentil_10
+```
+
+
+\:::
+
+------------------------------------------------------------------------
+
+\::: {#exr-errores_medicion} 5
+
+### Análisis de Errores de Medición
+
+Los errores de un instrumento de medición siguen $N(0, 2.5^5)$ unidades.
+
+1.  Simula 1000 mediciones
+
+```{r}
+#| code-fold: true
+
+# Parámetros del proceso
+mu <- 0
+sigma <- 2.5
+n <- 1000
+
+# ============================================
+# 1. Simular 1000 mediciones
+# ============================================
+set.seed(50)
+errores <- rnorm(n, mean = mu, sd = sigma)
+
+cat("Media muestral:", round(mean(errores), 2), "u\n")
+cat("SD muestral:", round(sd(errores), 2), "u\n")
+```
+
+2.  ¿Qué porcentaje de errores está entre -5 y +5 unidades?
+
+```{r}
+#| code-fold: true
+
+# Teórico
+prob_entre <- pnorm(5, mean = 0, sd = 2.5) - pnorm(-5, mean = 0, sd = 2.5)
+porcentaje_teorico <- prob_entre * 100
+
+# Empírico (de tu simulación)
+porcentaje_simulado <- mean(errores >= -5 & errores <= 5) * 100
+```
+
+3.  Calcula la probabilidad de que un error sea mayor a 6 unidades en valor absoluto
+
+```{r}
+#| code-fold: true
+
+prob_mayor_6 <- 2 * (1 - pnorm(6, mean = 0, sd = 2.5))
+```
+
+4.  Si se considera "preciso" un error ≤ 3 unidades, ¿qué porcentaje de mediciones son precisas?
+
+```{r}
+#| code-fold: true
+
+# Teórico
+prob_precisas <- pnorm(3, mean = 0, sd = 2.5) - pnorm(-3, mean = 0, sd = 2.5)
+porcentaje_precisas <- prob_precisas * 100
+
+# Empírico
+porcentaje_precisas_simulado <- mean(abs(errores) <= 3) * 100
+```
+
+5.  Verifica que la distribución es simétrica alrededor de 0
+```{r}
+#| code-fold: true
+
+mean(errores)     # debería ser cercano a 0
+median(errores)   # debería ser cercano a 0
+
+# Verificación visual
+hist(errores, main = "Distribución de errores de medición", col = "lightblue")
+abline(v = 0, col = "red", lwd = 2)
+```
+
+
+\:::
+
+\::: {#exr-examen_corporativo} 6
+
+### Puntuaciones de Examen Comparativo
+
+Dos grupos toman el mismo examen. Grupo A: $N(75, 10^2)$, Grupo B: $N(82, 8^2)$.
+
+1.  Simula 200 estudiantes de cada grupo
+```{r}
+#| code-fold: true
+
+set.seed(50)
+grupo_a <- rnorm(200, mean = 75, sd = 10)
+grupo_b <- rnorm(200, mean = 82, sd = 8)
+
+cat("Media muestral Grupo A:", round(mean(grupo_a), 2), "\n")
+cat("SD muestral Grupo A:", round(sd(grupo_a), 2), "\n")
+cat("Media muestral Grupo B:", round(mean(grupo_b), 2), "\n")
+cat("SD muestral Grupo B:", round(sd(grupo_b), 2), "\n")
+```
+
+
+2.  ¿Qué porcentaje de estudiantes del Grupo A supera la media del Grupo B?
+
+```{r}
+#| code-fold: true
+
+# Teórico
+prob_supera <- 1 - pnorm(82, mean = 75, sd = 10)
+porcentaje_teorico <- prob_supera * 100
+
+# Empírico
+porcentaje_simulado <- mean(grupo_a > 82) * 100
+
+cat("% Grupo A que supera media de Grupo B (teórico):", round(porcentaje_teorico, 2), "%\n")
+cat("% Grupo A que supera media de Grupo B (simulado):", round(porcentaje_simulado, 2), "%\n")
+```
+
+3.  ¿Cuál es la probabilidad de que un estudiante del Grupo B tenga puntuación menor a 70?
+
+```{r}
+#| code-fold: true
+
+prob_menor_70 <- pnorm(70, mean = 82, sd = 8)
+
+cat("Probabilidad Grupo B < 70:", round(prob_menor_70 * 100, 2), "%\n")
+```
+
+4.  Compara las distribuciones visualmente
+
+```{r}
+#| code-fold: true
+#| fig-align: center
+
+datos_comparacion <- data.frame(
+  puntuacion = c(grupo_a, grupo_b),
+  grupo = rep(c("Grupo A", "Grupo B"), each = 200)
+)
+
+ggplot(datos_comparacion, aes(x = puntuacion, fill = grupo)) +
+  geom_density(alpha = 0.5) +
+  labs(
+    title = "Comparación de distribuciones: Grupo A vs. Grupo B",
+    x = "Puntuación", y = "Densidad", fill = "Grupo"
+  ) +
+  theme_bw()
+```
+
+5.  ¿A partir de qué puntuación está el 10% superior de cada grupo?
+
+```{r}
+#| code-fold: true
+
+percentil_90_a <- qnorm(0.90, mean = 75, sd = 10)
+percentil_90_b <- qnorm(0.90, mean = 82, sd = 8)
+
+cat("10% superior de Grupo A a partir de:", round(percentil_90_a, 2), "puntos\n")
+cat("10% superior de Grupo B a partir de:", round(percentil_90_b, 2), "puntos\n")
+```
+
+
+\:::
