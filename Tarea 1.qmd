@@ -1,0 +1,204 @@
+---
+title: "Tarea 1 Datos espaciales"
+author: "Xochilt Duran"
+format: html
+editor: visual
+---
+
+```{r setup}
+#| warning: false
+#| message: false
+#| code_folde: true
+# Cargar librerías
+library(tidyverse)    # Para manipulación de datos
+library(sf)          # Para datos espaciales
+library(viridis)     # Para paletas de colores
+
+# Configurar tema para los mapas
+theme_set(theme_minimal())
+```
+
+### Lectura de datos espaciales del Estado de Colima
+
+### Cargando los límites estatales
+
+```{r entidades}
+col_estado <- st_read("data/colima_data/06ent.shp", options = "ENCODING=LATIN1", quiet = TRUE)
+
+```
+
+### Visualización del estado
+
+Cabe destacar, que Colima solo cuenta con 10 municipios en total.
+
+```{r mapa_col_estado}
+#| fig-align: center
+
+# Crear mapa básico de Colima
+mapa_col <- ggplot(col_estado) +
+  geom_sf(fill = "pink", color = "violet", size = 1.0) + 
+  coord_sf(xlim = c(2230000, 2344258), ylim = c(744505, 843574)) + 
+  labs(
+    title = "Estado de Colima",
+    subtitle = "Límites estatales",
+    caption = "Fuente: INEGI - Marco Geoestadístico"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    plot.caption = element_text(size = 10)
+  )
+
+print(mapa_col)
+```
+
+### Cargando los datos municipales
+
+```{r municipios}
+municipios_col <- st_read("data/colima_data/06mun.shp", options = "ENCODING=LATIN1", quiet = TRUE)
+
+# Explorar los datos
+cat("Número de municipios en Colima:", nrow(municipios_col), "\n")
+cat("Primeros 10 municipios en el dataset:\n")
+print(municipios_col$NOMGEO[1:10])
+
+```
+
+```{r mapa_municipios}
+#| fig-align: center
+
+
+mapa_municipios <- ggplot(municipios_col) +
+  geom_sf(fill = "pink", color = "white", size = 0.3) +
+  coord_sf(xlim = c(2230000, 2344258), ylim = c(744505, 843574)) +
+  labs(
+    title = "Municipios de Colima",
+    subtitle = paste("Total de municipios:", nrow(municipios_col)),
+    caption = "Fuente: INEGI - Marco Geoestadístico"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    plot.caption = element_text(size = 10)
+  )
+
+print(mapa_municipios)
+
+```
+
+### Municipios con mas densidad de personas
+
+Estos cuatro concentran la mayor parte de la población y la actividad económica del estado. Se agrupan en **dos zonas metropolitanas**:
+
+- **Colima-Villa de Álvarez** (incluye también Cuauhtémoc, Comala y Coquimatlán)
+
+- **Valle de Tecomán** (incluye a Armería)
+
+Manzanillo, aunque no forma parte de ninguna zona metropolitana, es el municipio más poblado y el de mayor crecimiento en las últimas décadas, impulsado por su puerto y el turismo.
+
+```{r municipios_importantes}
+#| fig-align: center
+
+# Municipios con mas población
+municipios_poblacion <- c(
+  "Manzanillo",
+  "Colima",
+  "Villa de Álvarez",
+  "Tecomán"
+)
+                     
+
+# Crear una variable para destacar estos municipios
+municipios_col <- municipios_col %>%
+  mutate(
+    poblacion = case_when(
+      NOMGEO %in% municipios_poblacion ~ "Mas Poblados",
+      TRUE ~ "Otros"
+    )
+  )
+
+# Crear mapa 
+mapa_col <- ggplot(municipios_col) +
+  geom_sf(aes(fill = poblacion), color = "white", size = 0.2) +
+  coord_sf(xlim = c(2230000, 2344258), ylim = c(744505, 843574)) +
+  scale_fill_manual(
+    values = c("Mas Poblados" = "red", "Otros" = "pink"),
+    name = "Clasificación"
+  ) +
+  labs(
+    title = "Municipios mas poblados de Colima",
+    caption = "Fuente: INEGI - Marco Geoestadístico"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    plot.caption = element_text(size = 10),
+    legend.position = "bottom"
+  )
+
+print(mapa_col)
+```
+
+### Calcular áreas de los municipios.
+
+```{r areas}
+# Calcular área de cada municipio (en km²)
+municipios_col <- municipios_col %>%
+  mutate(area_km2 = as.numeric(st_area(.)) / 1e6)  # Convertir m² a km²
+
+# Los 3 municipios mas grandes de Colima
+municipios_grandes <- municipios_col |> 
+  st_drop_geometry() |> 
+  arrange(desc(area_km2)) |> 
+  select(NOMGEO, area_km2) |> 
+  head(3)
+
+print("Los 3 municipios mas grandes de Colima:")
+knitr::kable(municipios_grandes, 
+             col.names = c("Municipio", "Área (km²)"),
+             digits = 2)
+```
+
+### Mapa de áreas
+
+```{r mapa_areas}
+#| fig-align: center
+
+# Crear mapa coloreado por área
+mapa_areas <- ggplot(municipios_col) +
+  geom_sf(aes(fill = area_km2), color = "white", size = 0.1) +
+  coord_sf(xlim = c(2230000, 2344258), ylim = c(744505, 843574)) +
+  scale_fill_viridis_c(
+    name = "Área\n(km²)",
+    trans = "log10",
+    labels = scales::comma_format()
+  ) +
+  labs(
+    title = "Área de los Municipios de Colima",
+    subtitle = "Coloreado por área en escala logarítmica",
+    caption = "Fuente: INEGI - Marco Geoestadístico"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    plot.caption = element_text(size = 10),
+    legend.position = "right"
+  )
+
+print(mapa_areas)
+```
+
+```{r}
+#| code_fold: true
+list.files()
+list.files("colima_data")
+```
+
+```{r}
+#| code_fold: true
+st_bbox(col_estado)
+```
