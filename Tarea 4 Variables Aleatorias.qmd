@@ -9,9 +9,10 @@ editor: visual
 #| warning: false
 #| message: false
 
-library(tidyverse)    # incluye el pipe %>% (vía magrittr/dplyr) y ggplot2
-library(knitr)        # kable()
-library(kableExtra)   # kable_styling()
+library(tidyverse)    
+library(knitr)        
+library(kableExtra) 
+library(ggplot2)
 ```
 
 
@@ -55,7 +56,6 @@ comparacion
 #| fig-align: center
 #| code-fold: true
 
-library(ggplot2)
 
 dist_larga <- tidyr::pivot_longer(
   data.frame(x = valores, Observada = obs / n_obs, Teórica = teorica_prob),
@@ -110,6 +110,7 @@ data.frame(
 #| fig-width: 7
 #| fig-align: center
 #| code-fold: true
+
 # Distribución original (plana, no normal)
 ggplot(data.frame(x = 1:10, prob = 1/10), aes(factor(x), prob)) +
   geom_col(fill = "steelblue", color = "black") +
@@ -139,6 +140,7 @@ Verificación de normalidad
 #| fig-height: 5
 #| fig-align: center
 #| code-fold: true
+
 qqnorm(medias, main = "Gráfico Q-Q de las medias muestrales")
 qqline(medias, col = "firebrick", lwd = 2)
 
@@ -187,7 +189,7 @@ kable(calidad_filtrada,
 #| fig-width: 7
 #| fig-align: center
 #| code-fold: true
-library(ggplot2)
+
 
 n <- 20
 p <- 0.85
@@ -270,7 +272,7 @@ comparacion
 #| fig-width: 7
 #| fig-align: center
 #| code-fold: true
-library(ggplot2)
+
 
 # Frecuencia relativa simulada vs. probabilidad teórica
 dist <- data.frame(
@@ -330,7 +332,7 @@ comparacion
 #| fig-width: 7
 #| fig-align: center
 #| code-fold: true
-library(ggplot2)
+
 
 k <- 0:(n + m)
 
@@ -381,7 +383,7 @@ sigma <- sqrt(n * p * (1 - p))
 #| fig-width: 8
 #| fig-align: center
 #| code-fold: true
-library(ggplot2)
+
 
 binom_df <- data.frame(x = 0:n, prob = dbinom(0:n, size = n, prob = p))
 
@@ -473,7 +475,6 @@ Distribución original vs distribución de las medias
 #| fig-width: 7
 #| fig-align: center
 
-library(ggplot2)
 
 ggplot(data.frame(x = 0:n, prob = dbinom(0:n, n, p)), aes(x, prob)) +
   geom_col(fill = "steelblue", color = "black") +
@@ -530,7 +531,7 @@ a) Brindar las gráficas de la función de probabilidad y la función de distrib
 #| fig-width: 7
 #| fig-align: center
 #| code-fold: true
-library(ggplot2)
+
 
 p <- 0.02
 x <- 1:250
@@ -712,8 +713,6 @@ Implementa una función que tome como parámetros $(r, p, n_{sim})$ y devuelva u
 ```{r}
 #| code-fold: true
 
-library(ggplot2)
-
 comparar_binneg <- function(r, p, n_sim) {
 
   # 1. Suma de r geométricas (cada una cuenta ensayos hasta su éxito)
@@ -876,7 +875,6 @@ data.frame(
 #| fig-width: 7
 #| fig-align: center
 #| code-fold: true
-library(ggplot2)
 
 # Distribución original
 ggplot(data.frame(x = 0:20, prob = dpois(0:20, lambda)), aes(x, prob)) +
